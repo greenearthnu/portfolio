@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex Rune — Full Stack Developer // root@portfolio</title>
+<meta name="description" content="Full Stack Developer & Hardware Tinkerer portfolio — software, systems, and silicon.">
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          void: '#05070d',
+          panel: '#0b0f19',
+          cyan: { DEFAULT: '#00f0ff', dim: '#0891a8' },
+          violet: { DEFAULT: '#b026ff', dim: '#6b1a99' },
+          amber: { DEFAULT: '#ffb020' },
+        },
+        fontFamily: {
+          display: ['"Space Grotesk"', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  :root{
+    --cyan: #00f0ff;
+    --violet: #b026ff;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: #05070d;
+    font-family: 'Space Grotesk', sans-serif;
+    color: #e6f6ff;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Background: tech grid + drifting glow orbs ---------- */
+  .grid-field {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.055) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 20%, black 40%, transparent 90%);
+    pointer-events: none;
+  }
+  .orb {
+    position: fixed;
+    border-radius: 9999px;
+    filter: blur(110px);
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.35;
+  }
+  .orb-cyan { width: 520px; height: 520px; background: var(--cyan); top: -120px; left: -160px; animation: drift1 22s ease-in-out infinite; }
+  .orb-violet { width: 620px; height: 620px; background: var(--violet); bottom: -220px; right: -200px; animation: drift2 26s ease-in-out infinite; }
+  @keyframes drift1 { 0%,100%{ transform: translate(0,0); } 50%{ transform: translate(60px, 40px); } }
+  @keyframes drift2 { 0%,100%{ transform: translate(0,0); } 50%{ transform: translate(-50px, -30px); } }
+
+  /* scanline overlay */
+  .scanlines {
+    position: fixed; inset: 0; z-index: 40; pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.0) 0px,
+      rgba(255,255,255,0.0) 2px,
+      rgba(0,0,0,0.12) 3px,
+      rgba(0,0,0,0.12) 3px
+    );
+    opacity: 0.35;
+    mix-blend-mode: overlay;
+  }
+  .vignette {
+    position: fixed; inset: 0; z-index: 39; pointer-events: none;
+    box-shadow: inset 0 0 220px 60px rgba(0,0,0,0.85);
+  }
+
+  /* ---------- Glass panels ---------- */
+  .glass {
+    background: rgba(11, 15, 25, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0, 240, 255, 0.14);
+  }
+  .glass-strong {
+    background: linear-gradient(180deg, rgba(15,20,32,0.75), rgba(8,10,18,0.75));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 240, 255, 0.16);
+  }
+
+  /* HUD corner brackets — the signature motif */
+  .hud {
+    position: relative;
+  }
+  .hud::before, .hud::after,
+  .hud .hud-br, .hud .hud-bl {
+    content: "";
+    position: absolute;
+    width: 16px; height: 16px;
+    border: 2px solid var(--cyan);
+    opacity: 0.55;
+    transition: all 0.35s ease;
+  }
+  .hud::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .hud::after { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+  .hud .hud-bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+  .hud .hud-br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  .hud:hover::before, .hud:hover::after,
+  .hud:hover .hud-bl, .hud:hover .hud-br {
+    width: 24px; height: 24px;
+    opacity: 1;
+    border-color: var(--violet);
+  }
+
+  /* Glow utilities */
+  .glow-cyan-text { text-shadow: 0 0 14px rgba(0,240,255,0.55), 0 0 40px rgba(0,240,255,0.18); }
+  .glow-border-cyan { box-shadow: 0 0 0 1px rgba(0,240,255,0.25), 0 0 24px rgba(0,240,255,0.10); }
+
+  .btn-execute {
+    position: relative;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.02em;
+    color: #05070d;
+    background: linear-gradient(90deg, var(--cyan), #7be9ff);
+    box-shadow: 0 0 20px rgba(0,240,255,0.45), 0 0 60px rgba(0,240,255,0.18);
+    transition: all 0.25s ease;
+  }
+  .btn-execute:hover {
+    box-shadow: 0 0 30px rgba(0,240,255,0.85), 0 0 90px rgba(176,38,255,0.35);
+    transform: translateY(-2px);
+  }
+  .btn-ghost {
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid rgba(0,240,255,0.4);
+    color: var(--cyan);
+    transition: all 0.25s ease;
+  }
+  .btn-ghost:hover {
+    background: rgba(0,240,255,0.08);
+    box-shadow: 0 0 24px rgba(0,240,255,0.35);
+    border-color: var(--cyan);
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    border: 1px solid rgba(0,240,255,0.28);
+    color: #b9f4ff;
+    background: rgba(0,240,255,0.05);
+  }
+  .badge:hover { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,240,255,0.35); }
+
+  /* Project card hover glow */
+  .proj-card { transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease; }
+  .proj-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(176,38,255,0.55);
+    box-shadow: 0 0 0 1px rgba(176,38,255,0.25), 0 20px 60px -20px rgba(176,38,255,0.35), 0 0 40px rgba(0,240,255,0.10);
+  }
+
+  /* Terminal caret */
+  .caret { display:inline-block; width:9px; height:1.1em; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); vertical-align: text-bottom; animation: blink 0.9s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Section reveal */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s ease; }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* Nav underline */
+  .nav-link { position: relative; }
+  .nav-link::after {
+    content: ""; position: absolute; left:0; bottom:-4px; height:1px; width:0%;
+    background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+    transition: width 0.25s ease;
+  }
+  .nav-link:hover::after { width: 100%; }
+
+  ::selection { background: rgba(176,38,255,0.4); color: white; }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #05070d; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(var(--cyan), var(--violet)); border-radius: 6px; }
+
+  .font-mono-tight { font-family: 'JetBrains Mono', monospace; }
+
+  /* Contact input focus glow */
+  .term-input:focus { outline: none; box-shadow: 0 0 0 1px var(--cyan), 0 0 26px rgba(0,240,255,0.35); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orb, .caret, * { animation-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+
+<body class="antialiased">
+
+  <div class="grid-field"></div>
+  <div class="orb orb-cyan"></div>
+  <div class="orb orb-violet"></div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- ============ NAV ============ -->
+  <header class="fixed top-0 inset-x-0 z-50">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="mt-4 glass rounded-xl px-5 py-3 flex items-center justify-between glow-border-cyan">
+        <a href="#" class="font-mono-tight text-cyan text-sm tracking-widest">
+          &gt; alex_rune<span class="caret"></span>
+        </a>
+        <nav class="hidden md:flex items-center gap-8 font-mono-tight text-xs uppercase tracking-widest text-slate-300">
+          <a href="#stack" class="nav-link hover:text-cyan transition-colors">Arsenal</a>
+          <a href="#projects" class="nav-link hover:text-cyan transition-colors">Projects</a>
+          <a href="#contact" class="nav-link hover:text-cyan transition-colors">Contact</a>
+        </nav>
+        <a href="#contact" class="hidden md:inline-block btn-ghost rounded-md px-4 py-2 text-xs uppercase tracking-widest">
+          Connect ↗
+        </a>
+        <button id="menuBtn" class="md:hidden text-cyan font-mono-tight text-xl leading-none">☰</button>
+      </div>
+      <!-- mobile menu -->
+      <div id="mobileMenu" class="hidden md:hidden glass rounded-xl mt-2 px-5 py-4 flex flex-col gap-4 font-mono-tight text-xs uppercase tracking-widest text-slate-300">
+        <a href="#stack" class="hover:text-cyan">Arsenal</a>
+        <a href="#projects" class="hover:text-cyan">Projects</a>
+        <a href="#contact" class="hover:text-cyan">Contact</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="relative z-10 min-h-screen flex items-center pt-32 pb-20 px-6">
+    <div class="max-w-6xl mx-auto w-full grid lg:grid-cols-5 gap-12 items-center">
+
+      <div class="lg:col-span-3">
+        <p class="font-mono-tight text-xs tracking-[0.3em] text-violet uppercase mb-5">
+          [ full_stack_developer.exe ] — status: online
+        </p>
+        <h1 class="font-display font-700 text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight">
+          I build digital
+          <span class="text-cyan glow-cyan-text">and physical</span>
+          realities.
+        </h1>
+        <p class="mt-6 max-w-xl text-slate-400 text-base sm:text-lg leading-relaxed">
+          Software engineer bridging clean web architecture with embedded hardware —
+          from React interfaces down to the microcontrollers reading the sensors.
+        </p>
+
+        <!-- Terminal window -->
+        <div class="hud glass-strong rounded-lg mt-9 max-w-xl overflow-hidden glow-border-cyan">
+          <div class="hud-bl"></div><div class="hud-br"></div>
+          <div class="flex items-center gap-2 px-4 py-2.5 border-b border-cyan/10 bg-black/30">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span>
+            <span class="ml-3 font-mono-tight text-[11px] text-slate-500">bash — /home/alex/portfolio</span>
+          </div>
+          <div class="p-5 font-mono-tight text-sm leading-7 min-h-[132px]">
+            <span id="typedOutput" class="text-cyan"></span><span class="caret"></span>
+          </div>
+        </div>
+
+        <div class="mt-9 flex flex-wrap items-center gap-4">
+          <a href="#projects" class="btn-execute rounded-md px-6 py-3.5 font-semibold text-sm inline-flex items-center gap-2">
+            Execute: View_Projects() <span aria-hidden="true">▶</span>
+          </a>
+          <a href="#contact" class="btn-ghost rounded-md px-6 py-3.5 text-sm">
+            ./initiate_contact.sh
+          </a>
+        </div>
+      </div>
+
+      <!-- side HUD panel -->
+      <div class="lg:col-span-2 reveal">
+        <div class="hud glass rounded-xl p-6 glow-border-cyan">
+          <div class="hud-bl"></div><div class="hud-br"></div>
+          <p class="font-mono-tight text-[11px] tracking-widest text-slate-500 uppercase mb-4">// system.status</p>
+          <ul class="space-y-3 font-mono-tight text-sm">
+            <li class="flex justify-between border-b border-white/5 pb-2"><span class="text-slate-400">location</span><span class="text-cyan">remote / global</span></li>
+            <li class="flex justify-between border-b border-white/5 pb-2"><span class="text-slate-400">focus</span><span class="text-cyan">web &amp; edge systems</span></li>
+            <li class="flex justify-between border-b border-white/5 pb-2"><span class="text-slate-400">experience</span><span class="text-cyan">6+ years</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">availability</span><span class="text-[#39ff88]">● open to work</span></li>
+          </ul>
+          <div class="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full w-[86%] bg-gradient-to-r from-cyan to-violet rounded-full"></div>
+          </div>
+          <p class="font-mono-tight text-[10px] text-slate-500 mt-2">core competency load — 86%</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ ARSENAL ============ -->
+  <section id="stack" class="relative z-10 py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="reveal mb-14 text-center">
+        <p class="font-mono-tight text-xs tracking-[0.3em] text-violet uppercase mb-3">// module_02</p>
+        <h2 class="font-display font-700 text-3xl sm:text-4xl">Tech Arsenal</h2>
+        <p class="text-slate-400 mt-3 max-w-lg mx-auto">Tools loaded and ready across the stack — from pixels to protocols to silicon.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <!-- Frontend -->
+        <div class="hud reveal glass rounded-xl p-6 glow-border-cyan">
+          <div class="hud-bl"></div><div class="hud-br"></div>
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-9 h-9 rounded-md bg-cyan/10 border border-cyan/30 flex items-center justify-center text-cyan">◧</span>
+            <h3 class="font-mono-tight text-sm uppercase tracking-widest text-cyan">Frontend</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="badge rounded px-2.5 py-1">React</span>
+            <span class="badge rounded px-2.5 py-1">Next.js</span>
+            <span class="badge rounded px-2.5 py-1">TypeScript</span>
+            <span class="badge rounded px-2.5 py-1">Tailwind CSS</span>
+            <span class="badge rounded px-2.5 py-1">Three.js</span>
+            <span class="badge rounded px-2.5 py-1">Framer Motion</span>
+          </div>
+        </div>
+
+        <!-- Backend -->
+        <div class="hud reveal glass rounded-xl p-6 glow-border-cyan" style="transition-delay:0.08s">
+          <div class="hud-bl"></div><div class="hud-br"></div>
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-9 h-9 rounded-md bg-violet/10 border border-violet/30 flex items-center justify-center text-violet">⌁</span>
+            <h3 class="font-mono-tight text-sm uppercase tracking-widest text-violet">Backend</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="badge rounded px-2.5 py-1">Python</span>
+            <span class="badge rounded px-2.5 py-1">Node.js</span>
+            <span class="badge rounded px-2.5 py-1">FastAPI</span>
+            <span class="badge rounded px-2.5 py-1">PostgreSQL</span>
+            <span class="badge rounded px-2.5 py-1">Redis</span>
+            <span class="badge rounded px-2.5 py-1">GraphQL</span>
+          </div>
+        </div>
+
+        <!-- Infra / Hardware -->
+        <div class="hud reveal glass rounded-xl p-6 glow-border-cyan" style="transition-delay:0.16s">
+          <div class="hud-bl"></div><div class="hud-br"></div>
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-9 h-9 rounded-md bg-[#39ff88]/10 border border-[#39ff88]/30 flex items-center justify-center text-[#39ff88]">◫</span>
+            <h3 class="font-mono-tight text-sm uppercase tracking-widest text-[#39ff88]">Infra / Hardware</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="badge rounded px-2.5 py-1">Linux</span>
+            <span class="badge rounded px-2.5 py-1">Docker</span>
+            <span class="badge rounded px-2.5 py-1">Raspberry Pi</span>
+            <span class="badge rounded px-2.5 py-1">ESP32</span>
+            <span class="badge rounded px-2.5 py-1">IoT / MQTT</span>
+            <span class="badge rounded px-2.5 py-1">AWS</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROJECTS ============ -->
+  <section id="projects" class="relative z-10 py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="reveal mb-14 text-center">
+        <p class="font-mono-tight text-xs tracking-[0.3em] text-violet uppercase mb-3">// module_03</p>
+        <h2 class="font-display font-700 text-3xl sm:text-4xl">Featured Projects</h2>
+        <p class="text-slate-400 mt-3 max-w-lg mx-auto">Selected builds spanning web platforms, embedded systems, and edge AI.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <!-- Project 1 -->
+        <article class="proj-card reveal glass-strong rounded-xl overflow-hidden">
+          <div class="relative h-44 overflow-hidden border-b border-cyan/10">
+            <svg viewBox="0 0 400 200" class="w-full h-full">
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#0b0f19"/>
+                  <stop offset="100%" stop-color="#101827"/>
+                </linearGradient>
+              </defs>
+              <rect width="400" height="200" fill="url(#g1)"/>
+              <g stroke="#00f0ff" stroke-opacity="0.35" stroke-width="1">
+                <path d="M0 160 L120 100 L220 130 L400 60" fill="none"/>
+                <path d="M0 190 L90 150 L260 175 L400 130" fill="none" stroke="#b026ff" stroke-opacity="0.3"/>
+              </g>
+              <circle cx="120" cy="100" r="3" fill="#00f0ff"/>
+              <circle cx="220" cy="130" r="3" fill="#00f0ff"/>
+              <circle cx="260" cy="175" r="3" fill="#b026ff"/>
+            </svg>
+            <span class="absolute top-3 right-3 badge rounded px-2 py-0.5">v2.3.1</span>
+          </div>
+          <div class="p-6">
+            <h3 class="font-display font-semibold text-lg mb-2">Nebula Analytics</h3>
+            <p class="text-sm text-slate-400 leading-relaxed mb-4">
+              Real-time data visualization platform streaming telemetry from distributed edge nodes into a live 3D dashboard.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="badge rounded px-2 py-0.5">React</span>
+              <span class="badge rounded px-2 py-0.5">Python</span>
+              <span class="badge rounded px-2 py-0.5">WebSockets</span>
+            </div>
+            <a href="#" class="btn-ghost inline-flex items-center gap-2 rounded-md px-4 py-2 text-xs">
+              &lt;/&gt; Source Code
+            </a>
+          </div>
+        </article>
+
+        <!-- Project 2 -->
+        <article class="proj-card reveal glass-strong rounded-xl overflow-hidden" style="transition-delay:0.08s">
+          <div class="relative h-44 overflow-hidden border-b border-cyan/10">
+            <svg viewBox="0 0 400 200" class="w-full h-full">
+              <defs>
+                <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#120b19"/>
+                  <stop offset="100%" stop-color="#1a1027"/>
+                </linearGradient>
+              </defs>
+              <rect width="400" height="200" fill="url(#g2)"/>
+              <g fill="none" stroke="#b026ff" stroke-opacity="0.4">
+                <rect x="150" y="60" width="100" height="80" rx="6"/>
+                <circle cx="200" cy="100" r="26" stroke="#00f0ff"/>
+              </g>
+              <path d="M150 100 H60 M250 100 H340 M200 60 V20 M200 140 V180" stroke="#00f0ff" stroke-opacity="0.3"/>
+            </svg>
+            <span class="absolute top-3 right-3 badge rounded px-2 py-0.5">edge_ai</span>
+          </div>
+          <div class="p-6">
+            <h3 class="font-display font-semibold text-lg mb-2">SentryNode</h3>
+            <p class="text-sm text-slate-400 leading-relaxed mb-4">
+              ESP32-powered perimeter sensor mesh running on-device inference to detect anomalies before they hit the cloud.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="badge rounded px-2 py-0.5">ESP32</span>
+              <span class="badge rounded px-2 py-0.5">Edge AI</span>
+              <span class="badge rounded px-2 py-0.5">C++</span>
+            </div>
+            <a href="#" class="btn-ghost inline-flex items-center gap-2 rounded-md px-4 py-2 text-xs">
+              &lt;/&gt; Source Code
+            </a>
+          </div>
+        </article>
+
+        <!-- Project 3 -->
+        <article class="proj-card reveal glass-strong rounded-xl overflow-hidden" style="transition-delay:0.16s">
+          <div class="relative h-44 overflow-hidden border-b border-cyan/10">
+            <svg viewBox="0 0 400 200" class="w-full h-full">
+              <defs>
+                <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#0a1414"/>
+                  <stop offset="100%" stop-color="#0f1a1a"/>
+                </linearGradient>
+              </defs>
+              <rect width="400" height="200" fill="url(#g3)"/>
+              <g stroke="#39ff88" stroke-opacity="0.4" fill="none">
+                <path d="M40 150 L100 60 L160 150 Z"/>
+                <path d="M180 150 L240 40 L300 150 Z"/>
+              </g>
+              <path d="M0 150 H400" stroke="#00f0ff" stroke-opacity="0.25"/>
+            </svg>
+            <span class="absolute top-3 right-3 badge rounded px-2 py-0.5">saas</span>
+          </div>
+          <div class="p-6">
+            <h3 class="font-display font-semibold text-lg mb-2">Forge Deploy</h3>
+            <p class="text-sm text-slate-400 leading-relaxed mb-4">
+              Zero-downtime CI/CD orchestration tool with container rollouts, canary releases, and live rollback controls.
+            </p>
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="badge rounded px-2 py-0.5">Node.js</span>
+              <span class="badge rounded px-2 py-0.5">Docker</span>
+              <span class="badge rounded px-2 py-0.5">AWS</span>
+            </div>
+            <a href="#" class="btn-ghost inline-flex items-center gap-2 rounded-md px-4 py-2 text-xs">
+              &lt;/&gt; Source Code
+            </a>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section id="contact" class="relative z-10 py-24 px-6">
+    <div class="max-w-3xl mx-auto">
+      <div class="reveal mb-10 text-center">
+        <p class="font-mono-tight text-xs tracking-[0.3em] text-violet uppercase mb-3">// module_04</p>
+        <h2 class="font-display font-700 text-3xl sm:text-4xl">Contact Node</h2>
+        <p class="text-slate-400 mt-3">Open a connection. All transmissions routed directly to my inbox.</p>
+      </div>
+
+      <div class="hud reveal glass-strong rounded-lg overflow-hidden glow-border-cyan">
+        <div class="hud-bl"></div><div class="hud-br"></div>
+        <div class="flex items-center gap-2 px-4 py-2.5 border-b border-cyan/10 bg-black/30">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span>
+          <span class="ml-3 font-mono-tight text-[11px] text-slate-500">send_message.sh</span>
+        </div>
+
+        <form id="contactForm" class="p-6 sm:p-8 font-mono-tight text-sm space-y-5">
+          <div>
+            <label class="block text-slate-500 mb-1.5">$ set identity.name</label>
+            <input required type="text" name="name" placeholder="your_name"
+              class="term-input w-full bg-black/40 border border-cyan/20 rounded-md px-4 py-3 text-cyan placeholder:text-slate-600 transition">
+          </div>
+          <div>
+            <label class="block text-slate-500 mb-1.5">$ set identity.email</label>
+            <input required type="email" name="email" placeholder="you@domain.com"
+              class="term-input w-full bg-black/40 border border-cyan/20 rounded-md px-4 py-3 text-cyan placeholder:text-slate-600 transition">
+          </div>
+          <div>
+            <label class="block text-slate-500 mb-1.5">$ transmit payload.message</label>
+            <textarea required name="message" rows="4" placeholder="type your message..."
+              class="term-input w-full bg-black/40 border border-cyan/20 rounded-md px-4 py-3 text-cyan placeholder:text-slate-600 transition resize-none"></textarea>
+          </div>
+          <button type="submit" class="btn-execute w-full sm:w-auto rounded-md px-6 py-3.5 font-semibold text-sm">
+            Execute: Send_Message() ▶
+          </button>
+          <p id="formStatus" class="text-[#39ff88] text-xs pt-1 hidden">// transmission complete — response ETA: 24h</p>
+        </form>
+      </div>
+
+      <div class="reveal mt-10 flex flex-wrap justify-center gap-4">
+        <a href="#" class="btn-ghost rounded-md px-5 py-2.5 text-xs">GitHub ↗</a>
+        <a href="#" class="btn-ghost rounded-md px-5 py-2.5 text-xs">LinkedIn ↗</a>
+        <a href="#" class="btn-ghost rounded-md px-5 py-2.5 text-xs">Twitter / X ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="relative z-10 py-8 px-6 border-t border-cyan/10 text-center">
+    <p class="font-mono-tight text-[11px] text-slate-600">
+      © 2026 alex_rune — compiled with vanilla JS, Tailwind, and neon. // EOF
+    </p>
+  </footer>
+
+  <script>
+    // ---- Mobile menu ----
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    menuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+    mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+
+    // ---- Terminal typing effect ----
+    const lines = [
+      "> system initialized...",
+      "> loading identity... OK",
+      "> Hello, I build digital and physical realities.",
+      "> ready for deployment_"
+    ];
+    const el = document.getElementById('typedOutput');
+    let li = 0, ci = 0;
+
+    function typeLoop() {
+      if (li >= lines.length) return;
+      const line = lines[li];
+      if (ci <= line.length) {
+        el.innerHTML = lines.slice(0, li).map(l => l + '\n').join('') + line.slice(0, ci);
+        ci++;
+        setTimeout(typeLoop, 28 + Math.random() * 35);
+      } else {
+        li++;
+        ci = 0;
+        setTimeout(typeLoop, 450);
+      }
+    }
+    // preserve line breaks
+    el.style.whiteSpace = 'pre-wrap';
+    typeLoop();
+
+    // ---- Scroll reveal ----
+    const revealEls = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    revealEls.forEach(elm => io.observe(elm));
+
+    // ---- Contact form (static-site friendly demo handler) ----
+    const form = document.getElementById('contactForm');
+    const status = document.getElementById('formStatus');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      status.classList.remove('hidden');
+      form.querySelectorAll('input, textarea').forEach(f => f.value = '');
+      setTimeout(() => status.classList.add('hidden'), 5000);
+      // NOTE: this is a static-site stub. Wire this up to Formspree, EmailJS,
+      // or a serverless function endpoint to actually deliver messages.
+    });
+  </script>
+
+</body>
+</html>
